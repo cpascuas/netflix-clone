@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from "react";
 import axios from "./axios";
 import "./Row.css";
+import YouTube from "react-youtube";
+import movieTrailer from "movie-trailer";
 
 const base_url = "https://image.tmdb.org/t/p/original/";
 
 function Row({ title, fetchUrl, isLargeRow }) {
   const [movies, setMovies] = useState([]);
+  // whener we click, we wasnt to capture trailer url
+  const [trailerUrl, setTrailerUrl] = useState("");
 
   useEffect(() => {
     //make an async call to movie database
@@ -19,7 +23,30 @@ function Row({ title, fetchUrl, isLargeRow }) {
     fetchData();
   }, [fetchUrl]);
 
+  const opts = {
+    height: "390",
+    width: "100%",
+    playerVars: {
+      // https://developers.google.com/youtube/player_parameters
+      autoplay: 1,
+    },
+  };
+
   // console.table(movies);
+
+  const handleClick = (movie) => {
+    if (trailerUrl) {
+      setTrailerUrl("");
+    } else {
+      movieTrailer(movie?.name || "")
+        .then((url) => {
+          // https://www.youtube.com/watch?v=XtMThy8QKqU&t=7510s
+          const urlParams = new URLSearchParams(new URL(url).search);
+          setTrailerUrl(urlParams.get("v"));
+        })
+        .catch((error) => console.log(error));
+    }
+  };
 
   return (
     <div className="row">
@@ -30,6 +57,7 @@ function Row({ title, fetchUrl, isLargeRow }) {
           // also can do with backticks see 1:08
           <img
             key={movie.id}
+            onClick={() => handleClick(movie)}
             className={`row_poster ${isLargeRow && "row_posterLarge"}`}
             src={`${base_url}${
               isLargeRow ? movie.poster_path : movie.backdrop_path
@@ -38,6 +66,8 @@ function Row({ title, fetchUrl, isLargeRow }) {
           />
         ))}
       </div>
+      {/* when we have a trailer Url then show vid */}
+      {trailerUrl && <YouTube videoId={trailerUrl} opts={opts} />}
       {/* posters */}
       {/* {fetchUrl} */}
     </div>
